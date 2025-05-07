@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
-
+import math
 
 matrix_data_disk = None
 matrix_data_mem = None
@@ -32,6 +32,9 @@ def load_data(medium = ""):
         print(f"{medium} training data is missing")
         return
     matrix_data_disk = pd.read_csv(f"data/{medium}_ratings.csv")
+    
+    matrix_data_disk.loc[:, "userId"] -= 1
+    matrix_data_disk.loc[:, f"{medium}Id"] -= 1
     
 """ 
 store_data() is responsible for storing the dataframe into a .csv to be accessed
@@ -68,7 +71,6 @@ def sparsify(medium = ""):
     matrix_data_mem = np.ones((num_users, num_medium)) * -1
     
     matrix_data_mem[(matrix_data_disk.loc[:, "userId"].values)[:], (matrix_data_disk.loc[:, f"{medium}Id"].values)[:]] = (matrix_data_disk.loc[:, "rating"].values)[:]
-
     return
 
 
@@ -101,35 +103,56 @@ def alter_matrix_data_mem(user_id, medium_id, rating):
     return
 
 def similarity(user_a, user_b):
-    a_set , b_set, common_set = set()
+    a_set , b_set, common_set = set(), set(), set()
 
     #Create the set of common movies between user_a and user_b
-    for id_a in matrix_data_mem[user_a]:
-        a_set.add(id_a)
-    for id_b in matrix_data_mem[user_b]:
-        b_set.add(id_b)
+
+    #TODO: This for loop can be turned from an O(n^2) to an O(n) loop by merging loops
+    for index, element in enumerate(matrix_data_mem[user_a]):
+        if(element > 0):
+            a_set.add(index)
+    for index, element in enumerate(matrix_data_mem[user_b]):
+        if(element > 0):
+            b_set.add(index)
+
+    
 
     for id in a_set:
-        if(id in b_set):
+        if(id in b_set and id != -1):
             common_set.add(id)
+
     
+
     a_average_rating = 0
     b_average_rating = 0
     
     for id in common_set:
-        a_average_rating += matrix_data_mem[user_a]
-        b_average_rating += matrix_data_mem[user_b]
+        a_average_rating += matrix_data_mem[user_a, id]
+        b_average_rating += matrix_data_mem[user_b, id]
     
     a_average_rating /= len(common_set)
     b_average_rating /= len(common_set)
 
-    numerator = 0
+    pcc_numerator = 0
+    a_std_dev = 0
+    b_std_dev = 0
+
+
+    #TODO: Need to address bug where the denominator can resolve to 0.
     for id in common_set:
-        numerator += (a_average_rating - matrix_data_mem[user_a][id])*(b_average_rating - matrix_data_mem[user_b][id])
+        pcc_numerator += (a_average_rating - matrix_data_mem[user_a, id])*(b_average_rating - matrix_data_mem[user_b, id])
+        a_std_dev += (a_average_rating - matrix_data_mem[user_a, id]) ** 2
+        b_std_dev += (b_average_rating - matrix_data_mem[user_b, id]) ** 2
+    
+
+    
+
+    return pcc_numerator/math.sqrt(a_std_dev * b_std_dev)
 
 def main():
     load_data("movie")
     sparsify("movie")
+    print(similarity(0, 1))
 
 if __name__ == "__main__":
     main()
