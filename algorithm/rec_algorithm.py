@@ -66,10 +66,9 @@ def sparsify(medium = ""):
     
     # We are using -1 to represent a "no-rating"
     matrix_data_mem = np.ones((num_users, num_medium)) * -1
+    
+    matrix_data_mem[(matrix_data_disk.loc[:, "userId"].values)[:], (matrix_data_disk.loc[:, f"{medium}Id"].values)[:]] = (matrix_data_disk.loc[:, "rating"].values)[:]
 
-    #TODO: Vectorize this calculation here.
-    for row, element in matrix_data_disk.iterrows():
-        matrix_data_mem[int(element.loc["userId"])][int(element.loc[f"{medium}Id"])] = element.loc["rating"]
     return
 
 
@@ -101,6 +100,32 @@ def alter_matrix_data_mem(user_id, medium_id, rating):
 
     return
 
+def similarity(user_a, user_b):
+    a_set , b_set, common_set = set()
+
+    #Create the set of common movies between user_a and user_b
+    for id_a in matrix_data_mem[user_a]:
+        a_set.add(id_a)
+    for id_b in matrix_data_mem[user_b]:
+        b_set.add(id_b)
+
+    for id in a_set:
+        if(id in b_set):
+            common_set.add(id)
+    
+    a_average_rating = 0
+    b_average_rating = 0
+    
+    for id in common_set:
+        a_average_rating += matrix_data_mem[user_a]
+        b_average_rating += matrix_data_mem[user_b]
+    
+    a_average_rating /= len(common_set)
+    b_average_rating /= len(common_set)
+
+    numerator = 0
+    for id in common_set:
+        numerator += (a_average_rating - matrix_data_mem[user_a][id])*(b_average_rating - matrix_data_mem[user_b][id])
 
 def main():
     load_data("movie")
