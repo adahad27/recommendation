@@ -124,16 +124,12 @@ def similarity(user_a, user_b):
     b_average_rating = np.average(matrix_data_mem[user_b, common_list[:]])
     
 
-    covariance = 0
-    a_std_dev = 0
-    b_std_dev = 0
-
 
     #TODO: Need to address bug where the denominator can resolve to 0.
 
     covariance = np.sum(np.multiply((a_average_rating - matrix_data_mem[user_a, common_list[:]]), (b_average_rating - matrix_data_mem[user_b, common_list[:]])))
-    a_std_dev = np.sum(np.multiply((a_average_rating - matrix_data_mem[user_a, common_list[:]]), (a_average_rating - matrix_data_mem[user_a, common_list[:]])))
-    b_std_dev = np.sum(np.multiply((b_average_rating - matrix_data_mem[user_b, common_list[:]]), (b_average_rating - matrix_data_mem[user_b, common_list[:]])))
+    a_std_dev = np.sum(np.square((a_average_rating - matrix_data_mem[user_a, common_list[:]])))
+    b_std_dev = np.sum(np.square((b_average_rating - matrix_data_mem[user_b, common_list[:]])))
     
 
     
@@ -191,8 +187,6 @@ def predict(userId, mediumId, k):
 def main():
     load_data("movie")
     sparsify("movie")
-    print(predict(0, 1, 3))
-    # print(similarity(0, 5))
 
 if __name__ == "__main__":
     main()
