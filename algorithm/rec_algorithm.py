@@ -125,13 +125,14 @@ def similarity(user_a, user_b):
     
 
 
-    #TODO: Need to address bug where the denominator can resolve to 0.
-
     covariance = np.sum(np.multiply((a_average_rating - matrix_data_mem[user_a, common_list[:]]), (b_average_rating - matrix_data_mem[user_b, common_list[:]])))
     a_std_dev = np.sum(np.square((a_average_rating - matrix_data_mem[user_a, common_list[:]])))
     b_std_dev = np.sum(np.square((b_average_rating - matrix_data_mem[user_b, common_list[:]])))
     
-
+    if(covariance == 0 or a_std_dev == 0 or b_std_dev == 0):
+        return (np.dot(matrix_data_mem[user_a, common_list[:]], matrix_data_mem[user_b, common_list[:]])/
+                (np.linalg.norm(matrix_data_mem[user_a, common_list[:]]) * 
+                 np.linalg.norm(matrix_data_mem[user_b, common_list[:]])))
     
 
     return covariance/math.sqrt(a_std_dev * b_std_dev)
