@@ -110,24 +110,13 @@ similarity() is responsible for calculating the Pearson's Correlation Coefficien
 to compare how similar their ratings on the same movies are.
 """
 def similarity(user_a, user_b):
-    a_set , b_set, common_list = set(), set(), np.array([])
 
     #Create the set of common movies between user_a and user_b
 
-    #TODO: This for loop can be turned from an O(2n) to an O(n) loop by merging loops
-    #TODO: This might be where the bottleneck for the performance is coming from
-    for index, element in enumerate(matrix_data_mem[user_a]):
-        if(element > 0):
-            a_set.add(index)
-    for index, element in enumerate(matrix_data_mem[user_b]):
-        if(element > 0):
-            b_set.add(index)
 
+    common_list = np.logical_and(matrix_data_mem[user_a, :] > 0, matrix_data_mem[user_b, :] > 0)
     
-
-    for id in a_set:
-        if(id in b_set and id != -1):
-            common_list = np.append(common_list, int(id))
+    common_list = np.where(common_list > 0)[0]
 
     common_list = common_list.astype(np.int32)
     
