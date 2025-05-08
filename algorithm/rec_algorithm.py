@@ -110,11 +110,12 @@ similarity() is responsible for calculating the Pearson's Correlation Coefficien
 to compare how similar their ratings on the same movies are.
 """
 def similarity(user_a, user_b):
-    a_set , b_set, common_set = set(), set(), set()
+    a_set , b_set, common_list = set(), set(), np.array([])
 
     #Create the set of common movies between user_a and user_b
 
-    #TODO: This for loop can be turned from an O(n^2) to an O(n) loop by merging loops
+    #TODO: This for loop can be turned from an O(2n) to an O(n) loop by merging loops
+    #TODO: This might be where the bottleneck for the performance is coming from
     for index, element in enumerate(matrix_data_mem[user_a]):
         if(element > 0):
             a_set.add(index)
@@ -126,35 +127,29 @@ def similarity(user_a, user_b):
 
     for id in a_set:
         if(id in b_set and id != -1):
-            common_set.add(id)
+            common_list = np.append(common_list, int(id))
 
+    common_list = common_list.astype(np.int32)
+    
+    a_average_rating = np.average(matrix_data_mem[user_a, common_list[:]])
+    b_average_rating = np.average(matrix_data_mem[user_b, common_list[:]])
     
 
-    a_average_rating = 0
-    b_average_rating = 0
-    
-    for id in common_set:
-        a_average_rating += matrix_data_mem[user_a, id]
-        b_average_rating += matrix_data_mem[user_b, id]
-    
-    a_average_rating /= len(common_set)
-    b_average_rating /= len(common_set)
-
-    pcc_numerator = 0
+    covariance = 0
     a_std_dev = 0
     b_std_dev = 0
 
 
     #TODO: Need to address bug where the denominator can resolve to 0.
-    for id in common_set:
-        pcc_numerator += (a_average_rating - matrix_data_mem[user_a, id])*(b_average_rating - matrix_data_mem[user_b, id])
-        a_std_dev += (a_average_rating - matrix_data_mem[user_a, id]) ** 2
-        b_std_dev += (b_average_rating - matrix_data_mem[user_b, id]) ** 2
+
+    covariance = np.sum(np.multiply((a_average_rating - matrix_data_mem[user_a, common_list[:]]), (b_average_rating - matrix_data_mem[user_b, common_list[:]])))
+    a_std_dev = np.sum(np.multiply((a_average_rating - matrix_data_mem[user_a, common_list[:]]), (a_average_rating - matrix_data_mem[user_a, common_list[:]])))
+    b_std_dev = np.sum(np.multiply((b_average_rating - matrix_data_mem[user_b, common_list[:]]), (b_average_rating - matrix_data_mem[user_b, common_list[:]])))
     
 
     
 
-    return pcc_numerator/math.sqrt(a_std_dev * b_std_dev)
+    return covariance/math.sqrt(a_std_dev * b_std_dev)
 """
 calculate_average() is responsible for calculating the average rating that a user
 gives for every movie that they have reviewed.
@@ -186,6 +181,7 @@ def predict(userId, mediumId, k):
         similarity_dictionary[i] = sim_value
         pq.append((abs(sim_value) * -1, i))
 
+    
     #Sort via heapify for O(n) time complexity
     heapq.heapify(pq)
 
@@ -207,6 +203,7 @@ def main():
     load_data("movie")
     sparsify("movie")
     print(predict(0, 1, 3))
+    # print(similarity(0, 5))
 
 if __name__ == "__main__":
     main()
