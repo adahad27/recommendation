@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import math
+import heapq
 
 matrix_data_disk = None
 matrix_data_mem = None
@@ -79,6 +80,8 @@ def sparsify(medium = ""):
 add_user() is responsible for adding new users to the recommendation matrix.
 """
 def add_user():
+    num_users += 1
+    matrix_data_mem.append(np.ones(num_medium) * -1)
     return
 
 
@@ -102,6 +105,10 @@ def alter_matrix_data_mem(user_id, medium_id, rating):
 
     return
 
+""" 
+similarity() is responsible for calculating the Pearson's Correlation Coefficient between two users
+to compare how similar their ratings on the same movies are.
+"""
 def similarity(user_a, user_b):
     a_set , b_set, common_set = set(), set(), set()
 
@@ -148,11 +155,58 @@ def similarity(user_a, user_b):
     
 
     return pcc_numerator/math.sqrt(a_std_dev * b_std_dev)
+"""
+calculate_average() is responsible for calculating the average rating that a user
+gives for every movie that they have reviewed.
+"""
+def calculate_average(userId):
+    sum = 0
+    count = 0
+    for rating in matrix_data_mem[userId]:
+        if(rating > 0):
+            sum += rating
+            count += 1
+    return sum/count
+
+"""
+predict() is responsible for predicting the rating that a user would give a certain
+movie given what it knows about other users in the matrix_data_mem matrix.
+
+"""
+def predict(userId, mediumId, k):
+    pq = []
+    similarity_dictionary = {}
+    #Calculate similarity between all users and the given user.
+    for i in range(num_users):
+        if(i == userId or matrix_data_mem[i][mediumId] == -1):
+            continue
+
+        sim_value = similarity(userId, i)
+
+        similarity_dictionary[i] = sim_value
+        pq.append((abs(sim_value) * -1, i))
+
+    #Sort via heapify for O(n) time complexity
+    heapq.heapify(pq)
+
+    collection = []
+
+    for j in range(k):
+        collection.append(heapq.heappop(pq))
+    
+    numerator = 0
+    denominator = 0
+    for j in range(k):
+        numerator += (similarity_dictionary[collection[j][1]]) * (matrix_data_mem[collection[j][1]][mediumId] - calculate_average(collection[j][1]))
+        denominator += abs(similarity_dictionary[collection[j][1]])
+    
+    
+    return calculate_average(userId) + numerator/denominator
 
 def main():
     load_data("movie")
     sparsify("movie")
-    print(similarity(0, 1))
+    print(predict(0, 1, 3))
 
 if __name__ == "__main__":
     main()
