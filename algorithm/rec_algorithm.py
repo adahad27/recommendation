@@ -158,8 +158,11 @@ def predict(userId, mediumId, k):
     pq = []
     similarity_dictionary = {}
     #Calculate similarity between all users and the given user.
+    num_users_not_consumed_medium = 0
+    
     for i in range(num_users):
         if(i == userId or matrix_data_mem[i][mediumId] == -1):
+            num_users_not_consumed_medium += 1
             continue
 
         sim_value = similarity(userId, i)
@@ -167,27 +170,33 @@ def predict(userId, mediumId, k):
         similarity_dictionary[i] = sim_value
         pq.append((abs(sim_value) * -1, i))
 
-    
+    if(num_users_not_consumed_medium == num_users):
+        return 2.5
     #Sort via heapify for O(n) time complexity
     heapq.heapify(pq)
 
     collection = []
 
-    for j in range(k):
+    for j in range(min(k, len(pq))):
         collection.append(heapq.heappop(pq))
     
     numerator = 0
     denominator = 0
-    for j in range(k):
+    for j in range(min(k, len(collection))):
         numerator += (similarity_dictionary[collection[j][1]]) * (matrix_data_mem[collection[j][1]][mediumId] - calculate_average(collection[j][1]))
         denominator += abs(similarity_dictionary[collection[j][1]])
     
-    
+    if(mediumId % 100 == 0):
+        print(mediumId)
     return calculate_average(userId) + numerator/denominator
+
+def predict_all(user_Id, k):
+    np.vectorize(predict)(user_Id, list(range(num_medium)), k)
+    
 
 def main():
     load_data("movie")
     sparsify("movie")
-
+    predict_all(0, 3)
 if __name__ == "__main__":
     main()
