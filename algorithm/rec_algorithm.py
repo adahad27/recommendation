@@ -109,33 +109,43 @@ def alter_matrix_data_mem(user_id, medium_id, rating):
 similarity() is responsible for calculating the Pearson's Correlation Coefficient between two users
 to compare how similar their ratings on the same movies are.
 """
-def similarity(user_a, user_b):
+def similarity(user_a):
 
     #Create the set of common movies between user_a and user_b
-
-
-    common_list = np.logical_and(matrix_data_mem[user_a, :] > 0, matrix_data_mem[user_b, :] > 0)
     
-    common_list = np.where(common_list > 0)[0]
-
-    common_list = common_list.astype(np.int32)
+    common_matrix = np.logical_and(np.repeat(np.array([matrix_data_mem[user_a], ]), num_users, axis=0), matrix_data_mem > 0)
     
-    a_average_rating = np.average(matrix_data_mem[user_a, common_list[:]])
-    b_average_rating = np.average(matrix_data_mem[user_b, common_list[:]])
+    common_matrix = common_matrix.astype(np.int32)
+    
     
 
+    common_a = np.multiply(np.repeat(np.array([matrix_data_mem[user_a], ]), num_users, axis=0), common_matrix)
+    common_b = np.multiply(matrix_data_mem, common_matrix)
 
-    covariance = np.sum(np.multiply((a_average_rating - matrix_data_mem[user_a, common_list[:]]), (b_average_rating - matrix_data_mem[user_b, common_list[:]])))
-    a_std_dev = np.sum(np.square((a_average_rating - matrix_data_mem[user_a, common_list[:]])))
-    b_std_dev = np.sum(np.square((b_average_rating - matrix_data_mem[user_b, common_list[:]])))
+    a_average_rating = np.mean(common_a, axis = 1)
+    b_average_rating = np.mean(common_b, axis = 1)
     
-    if(covariance == 0 or a_std_dev == 0 or b_std_dev == 0):
-        return (np.dot(matrix_data_mem[user_a, common_list[:]], matrix_data_mem[user_b, common_list[:]])/
-                (np.linalg.norm(matrix_data_mem[user_a, common_list[:]]) * 
-                 np.linalg.norm(matrix_data_mem[user_b, common_list[:]])))
+    a_difference = np.repeat(np.array([a_average_rating, ]).T, num_medium, axis = 1) - common_a
+    b_difference = np.repeat(np.array([b_average_rating, ]).T, num_medium, axis = 1) - common_b
     
 
-    return covariance/math.sqrt(a_std_dev * b_std_dev)
+    covariance_array = np.sum(np.multiply(a_difference, b_difference), axis = 1)
+    a_std_dev = np.sum(np.square(a_difference), axis = 1)
+    b_std_dev = np.sum(np.square(b_difference), axis = 1)
+
+
+    return covariance_array / np.sqrt(np.multiply(a_std_dev, b_std_dev))
+    # covariance = np.sum(np.multiply((a_average_rating - matrix_data_mem[user_a, common_list[:]]), (b_average_rating - matrix_data_mem[user_b, common_list[:]])))
+    # a_std_dev = np.sum(np.square((a_average_rating - matrix_data_mem[user_a, common_list[:]])))
+    # b_std_dev = np.sum(np.square((b_average_rating - matrix_data_mem[user_b, common_list[:]])))
+    
+    # if(covariance == 0 or a_std_dev == 0 or b_std_dev == 0):
+    #     return (np.dot(matrix_data_mem[user_a, common_list[:]], matrix_data_mem[user_b, common_list[:]])/
+    #             (np.linalg.norm(matrix_data_mem[user_a, common_list[:]]) * 
+    #              np.linalg.norm(matrix_data_mem[user_b, common_list[:]])))
+    
+
+    # return covariance/math.sqrt(a_std_dev * b_std_dev)
 """
 calculate_average() is responsible for calculating the average rating that a user
 gives for every movie that they have reviewed.
@@ -158,8 +168,12 @@ def predict(userId, mediumId, k):
     pq = []
     similarity_dictionary = {}
     #Calculate similarity between all users and the given user.
-    num_users_not_consumed_medium = 0
     
+    #We want to consider all users who have reviewed the medium of interest
+    relevant_users = np.logical_and(np.where(list(range(num_users)) != userId), np.where(matrix_data_mem[:, mediumId] > 0))
+    similarity_results = np.vectorize(similarity)(userId, relevant_users)
+    tuple((np.abs(similarity_results) * -1)[:], )
+
     for i in range(num_users):
         if(i == userId or matrix_data_mem[i][mediumId] == -1):
             num_users_not_consumed_medium += 1
@@ -170,8 +184,7 @@ def predict(userId, mediumId, k):
         similarity_dictionary[i] = sim_value
         pq.append((abs(sim_value) * -1, i))
 
-    if(num_users_not_consumed_medium == num_users):
-        return 2.5
+    
     #Sort via heapify for O(n) time complexity
     heapq.heapify(pq)
 
@@ -197,6 +210,6 @@ def predict_all(user_Id, k):
 def main():
     load_data("movie")
     sparsify("movie")
-    predict_all(0, 3)
+    print(similarity(0))
 if __name__ == "__main__":
     main()
