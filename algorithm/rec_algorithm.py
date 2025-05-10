@@ -113,7 +113,7 @@ def similarity(user_a):
 
     #Create the set of common movies between user_a and user_b
     
-    common_matrix = np.logical_and(np.repeat(np.array([matrix_data_mem[user_a], ]), num_users, axis=0), matrix_data_mem > 0)
+    common_matrix = np.logical_and(np.repeat(np.array([matrix_data_mem[user_a], ]), num_users, axis=0) > 0, matrix_data_mem > 0)
     
     common_matrix = common_matrix.astype(np.int32)
     
@@ -121,13 +121,11 @@ def similarity(user_a):
 
     common_a = np.multiply(np.repeat(np.array([matrix_data_mem[user_a], ]), num_users, axis=0), common_matrix)
     common_b = np.multiply(matrix_data_mem, common_matrix)
+    a_average_rating = np.sum(common_a, axis = 1) / np.sum(common_matrix, axis = 1)
+    b_average_rating = np.sum(common_b, axis = 1) / np.sum(common_matrix, axis = 1)
 
-    a_average_rating = np.mean(common_a, axis = 1)
-    b_average_rating = np.mean(common_b, axis = 1)
-    
     a_difference = np.repeat(np.array([a_average_rating, ]).T, num_medium, axis = 1) - common_a
     b_difference = np.repeat(np.array([b_average_rating, ]).T, num_medium, axis = 1) - common_b
-    
 
     covariance_array = np.sum(np.multiply(a_difference, b_difference), axis = 1)
     a_std_dev = np.sum(np.square(a_difference), axis = 1)
@@ -210,6 +208,6 @@ def predict_all(user_Id, k):
 def main():
     load_data("movie")
     sparsify("movie")
-    print(similarity(0))
+    (similarity(0))
 if __name__ == "__main__":
     main()
