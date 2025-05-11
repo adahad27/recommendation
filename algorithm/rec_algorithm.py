@@ -117,33 +117,26 @@ def similarity(user_a):
     
     common_matrix = common_matrix.astype(np.int32)
     
-    
-
     common_a = np.multiply(np.repeat(np.array([matrix_data_mem[user_a], ]), num_users, axis=0), common_matrix)
     common_b = np.multiply(matrix_data_mem, common_matrix)
+    
+    #Creating the matrices that hold the average ratings on the set of all common mediums
     a_average_rating = np.sum(common_a, axis = 1) / np.sum(common_matrix, axis = 1)
     b_average_rating = np.sum(common_b, axis = 1) / np.sum(common_matrix, axis = 1)
-
+    
     a_difference = np.repeat(np.array([a_average_rating, ]).T, num_medium, axis = 1) - common_a
+    a_difference = np.multiply(a_difference, common_matrix)
+    
     b_difference = np.repeat(np.array([b_average_rating, ]).T, num_medium, axis = 1) - common_b
+    b_difference = np.multiply(b_difference, common_matrix)
 
+    #Calculating the covariance and the standard deviation needed for the Pearson Correlation Coefficient
     covariance_array = np.sum(np.multiply(a_difference, b_difference), axis = 1)
     a_std_dev = np.sum(np.square(a_difference), axis = 1)
     b_std_dev = np.sum(np.square(b_difference), axis = 1)
 
 
     return covariance_array / np.sqrt(np.multiply(a_std_dev, b_std_dev))
-    # covariance = np.sum(np.multiply((a_average_rating - matrix_data_mem[user_a, common_list[:]]), (b_average_rating - matrix_data_mem[user_b, common_list[:]])))
-    # a_std_dev = np.sum(np.square((a_average_rating - matrix_data_mem[user_a, common_list[:]])))
-    # b_std_dev = np.sum(np.square((b_average_rating - matrix_data_mem[user_b, common_list[:]])))
-    
-    # if(covariance == 0 or a_std_dev == 0 or b_std_dev == 0):
-    #     return (np.dot(matrix_data_mem[user_a, common_list[:]], matrix_data_mem[user_b, common_list[:]])/
-    #             (np.linalg.norm(matrix_data_mem[user_a, common_list[:]]) * 
-    #              np.linalg.norm(matrix_data_mem[user_b, common_list[:]])))
-    
-
-    # return covariance/math.sqrt(a_std_dev * b_std_dev)
 """
 calculate_average() is responsible for calculating the average rating that a user
 gives for every movie that they have reviewed.
@@ -208,6 +201,6 @@ def predict_all(user_Id, k):
 def main():
     load_data("movie")
     sparsify("movie")
-    (similarity(0))
+    print(similarity(0))
 if __name__ == "__main__":
     main()
