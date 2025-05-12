@@ -157,25 +157,15 @@ movie given what it knows about other users in the matrix_data_mem matrix.
 """
 def predict(userId, mediumId, k):
     pq = []
-    similarity_dictionary = {}
     #Calculate similarity between all users and the given user.
     
-    #We want to consider all users who have reviewed the medium of interest
-    relevant_users = np.logical_and(np.where(list(range(num_users)) != userId), np.where(matrix_data_mem[:, mediumId] > 0))
-    similarity_results = np.vectorize(similarity)(userId, relevant_users)
-    tuple((np.abs(similarity_results) * -1)[:], )
+    results = similarity(userId)
 
-    for i in range(num_users):
-        if(i == userId or matrix_data_mem[i][mediumId] == -1):
-            num_users_not_consumed_medium += 1
-            continue
-
-        sim_value = similarity(userId, i)
-
-        similarity_dictionary[i] = sim_value
-        pq.append((abs(sim_value) * -1, i))
-
+    #Filter out all users who have not consumed mediumId
     
+    for user, similarity_measure in enumerate(results):
+        if(matrix_data_mem[user, mediumId] != -1):
+            pq.append((abs(similarity_measure) * -1, user))
     #Sort via heapify for O(n) time complexity
     heapq.heapify(pq)
 
@@ -187,20 +177,18 @@ def predict(userId, mediumId, k):
     numerator = 0
     denominator = 0
     for j in range(min(k, len(collection))):
-        numerator += (similarity_dictionary[collection[j][1]]) * (matrix_data_mem[collection[j][1]][mediumId] - calculate_average(collection[j][1]))
-        denominator += abs(similarity_dictionary[collection[j][1]])
+        numerator += (results[collection[j][1]]) * (matrix_data_mem[collection[j][1]][mediumId] - calculate_average(collection[j][1]))
+        denominator += abs(results[collection[j][1]])
     
-    if(mediumId % 100 == 0):
-        print(mediumId)
+    
     return calculate_average(userId) + numerator/denominator
 
-def predict_all(user_Id, k):
-    np.vectorize(predict)(user_Id, list(range(num_medium)), k)
+
     
 
 def main():
     load_data("movie")
     sparsify("movie")
-    print(similarity(0))
+    print(predict(0, 1, 3))
 if __name__ == "__main__":
     main()
