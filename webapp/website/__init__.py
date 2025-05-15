@@ -1,7 +1,9 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+import os
 from os import path
 from flask_login import LoginManager
+import pandas as pd
 
 db = SQLAlchemy()
 DB_NAME = "database.db"
@@ -20,7 +22,7 @@ def create_app():
     app.register_blueprint(views, url_prefix = "/")
     app.register_blueprint(auth, url_prefix = "/")
     
-    from .models import Movie, User, Rating
+    from .models import User
     create_database(app)
 
     login_manager = LoginManager()
@@ -34,7 +36,19 @@ def create_app():
     return app
 
 def create_database(app):
-    if(not path.exists(f"website/{DB_NAME}")):
+    if(not path.exists(f"webapp/instance/{DB_NAME}")):
         with app.app_context():
+            from .models import Rating, Movie
             db.create_all()
-        print("Create Database!")
+            movies_metadata_df = pd.read_csv("data/movie_supplementary_data/movies.csv")
+            ratings = pd.read_csv("data/movie_ratings.csv")
+            for index, movie in movies_metadata_df.iterrows():
+                new_movie = Movie(id = index, movie_name = movie["title"])
+                db.session.add(new_movie)
+            
+            for index, rating_block in ratings.iterrows():
+                new_rating = Rating(id=index, movie_id=rating_block['movieId'], user_id=rating_block['userId'], rating=rating_block['rating'])
+                db.session.add(new_rating)
+            
+            db.session.commit()
+        print("Created Database!")

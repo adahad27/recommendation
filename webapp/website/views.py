@@ -1,11 +1,10 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session
 from flask_login import login_required, current_user
 from . import db
-from .models import Rating
-# from algorithm import rec_algorithm
+from .models import Rating, Movie, User
+from .rec_algorithm import return_prediction_list
 
 views = Blueprint('views', __name__)
-
 @views.route("/")
 @login_required
 def home():
@@ -40,5 +39,5 @@ def recommendation_page():
         user_id = 0 # We need to get this from the session
         # prediction_list = rec_algorithm.return_prediction_list(userId=user_id)
     else:
-        prediction_list = [1,2,3]        
+        prediction_list = [db.session.get(Movie, 0).movie_name,db.session.get(Movie, 1).movie_name,db.session.get(Movie, 2).movie_name]
     return render_template("recommendation.html", prediction_list=prediction_list, user = current_user)
