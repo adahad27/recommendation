@@ -2,6 +2,8 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for,
 from flask_login import login_required, current_user
 from . import db
 from .models import Rating
+# from algorithm import rec_algorithm
+
 views = Blueprint('views', __name__)
 
 @views.route("/")
@@ -30,6 +32,13 @@ def rating_page():
         return redirect(url_for("views.home"))
     return render_template("rating.html", user = current_user)
 
-@views.route("/recommendation")
+@views.route("/recommendation", methods = ['GET', 'POST'])
 def recommendation_page():
-    return
+    if(request.method == 'POST'):
+        """ First we validate that it is an API call to our recommendation system """
+        
+        user_id = 0 # We need to get this from the session
+        # prediction_list = rec_algorithm.return_prediction_list(userId=user_id)
+    else:
+        prediction_list = [1,2,3]        
+    return render_template("recommendation.html", prediction_list=prediction_list, user = current_user)

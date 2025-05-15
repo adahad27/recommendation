@@ -1,0 +1,11 @@
+{% extends "base.html" %} {% block title %} Recommendation {% endblock %}
+
+{% block content%}
+<h1>Here are your recommendations!</h1>
+<ol>
+    {% for movie in prediction_list%}
+        <li>{{movie}}</li>
+
+    {% endfor %}
+</ol>
+{% endblock %}

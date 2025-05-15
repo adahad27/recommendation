@@ -184,7 +184,8 @@ def predict(userId, mediumId, k):
     return calculate_average(userId) + numerator/denominator
 
 
-    
+def return_prediction_list(userId):
+    return
 
 def main():
     load_data("movie")
