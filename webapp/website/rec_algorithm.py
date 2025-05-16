@@ -70,7 +70,6 @@ def sparsify(medium = ""):
     #Need to increment by 1 because data is 1-indexed
     num_users = max(matrix_data_disk.get("user_id")) + 1
     num_medium = max(matrix_data_disk.get(f"{medium}_id")) + 1
-    
     # We are using -1 to represent a "no-rating"
     matrix_data_mem = np.ones((num_users, num_medium)) * -1
     
@@ -83,8 +82,11 @@ def sparsify(medium = ""):
 add_user() is responsible for adding new users to the recommendation matrix.
 """
 def add_user():
+    global num_users, num_medium, matrix_data_mem
+
+    matrix_data_mem = np.insert(matrix_data_mem, num_users, -1, axis = 0)
     num_users += 1
-    matrix_data_mem.append(np.ones(num_medium) * -1)
+
     return
 
 
@@ -115,7 +117,6 @@ to compare how similar their ratings on the same movies are.
 def similarity(user_a):
 
     #Create the set of common movies between user_a and user_b
-    
     common_matrix = np.logical_and(np.repeat(np.array([matrix_data_mem[user_a], ]), num_users, axis=0) > 0, matrix_data_mem > 0)
     
     common_matrix = common_matrix.astype(np.int32)
@@ -185,11 +186,12 @@ def predict(userId, mediumId, k, results):
 
 
 def return_prediction_list(userId, k, elements_to_return):
-    results = similarity(userId)
+    processed_user_id = userId + num_users - 2
+    results = similarity(processed_user_id)
     pq = []
     for movie in range(10):
-        if(matrix_data_mem[userId, movie] == -1):
-            prediction = predict(userId=userId, mediumId=movie, k=k, results=results)
+        if(matrix_data_mem[processed_user_id, movie] == -1):
+            prediction = predict(userId=processed_user_id, mediumId=movie, k=k, results=results)
             
             pq.append((prediction * -1, movie))
     heapq.heapify(pq)

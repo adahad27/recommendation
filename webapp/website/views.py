@@ -38,7 +38,7 @@ def recommendation_page():
     generated = False
     if(request.method == 'POST'):
         """ First we validate that it is an API call to our recommendation system """
-        prediction_list = return_prediction_list(userId=0, k = 3, elements_to_return=5)
+        prediction_list = return_prediction_list(userId=current_user.id, k = 3, elements_to_return=5)
         generated = True
         for index, movie in enumerate(prediction_list):
             prediction_list[index] = db.session.get(Movie, movie).movie_name
