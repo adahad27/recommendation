@@ -25,10 +25,17 @@ def rating_page():
         if(rating < 1 or rating > 5):
             flash("Please rate the movie in between 1 and 5 inclusive", category="error")
         new_rating = Rating(movie_id = movie_id, user_id = current_user.id, rating = rating)
+        
+        current_user.cold_start = True
+        
+        #This should update cold_start state just in case the line above does not
+        current_user_model = db.session.get(User, current_user.id)
+        current_user_model.cold_start = True
+
         db.session.add(new_rating)
         db.session.commit()
 
-        alter_matrix_data_mem(user_id=current_user.id, movie_id=movie_id, rating=rating)
+        alter_matrix_data_mem(user_id=current_user.id, medium_id=movie_id, rating=rating)
         return redirect(url_for("views.home"))
     return render_template("rating.html", user = current_user)
 

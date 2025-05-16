@@ -106,7 +106,7 @@ def alter_matrix_data_mem(user_id, medium_id, rating):
         print("rating is invalid")
         return
 
-    matrix_data_mem[user_id + num_users][medium_id] = rating
+    matrix_data_mem[user_id + num_users - 2][medium_id] = rating
 
     return
 

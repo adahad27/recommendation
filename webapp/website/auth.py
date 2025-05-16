@@ -50,7 +50,7 @@ def signup():
         elif(password1 != password2):
             flash('Passwords do not match', category='error')
         else:
-            new_user = User(email = email, first_name = first_name, password = generate_password_hash(password=password1, method='scrypt'))
+            new_user = User(email = email, first_name = first_name, password = generate_password_hash(password=password1, method='scrypt'), cold_start = False)
             db.session.add(new_user)
             db.session.commit()
             flash('Account created successfully!', category='success')

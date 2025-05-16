@@ -1,16 +1,21 @@
 {% extends "base.html" %} {% block title %} Recommendation {% endblock %}
 
 {% block content%}
-<form method="POST">
-    <button>Generate Recommendations</button>
-</form>
-{% if generated %}
-    <ol>
-        {% for movie in prediction_list%}
-            <li>{{movie}}</li>
+{% if current_user.cold_start %}
+    <form method="POST">
+        <button>Generate Recommendations</button>
+    </form>
+    {% if generated %}
+        <ol>
+            {% for movie in prediction_list%}
+                <li>{{movie}}</li>
 
-        {% endfor %}
-    </ol>
+            {% endfor %}
+        </ol>
+    {% endif %}
+{% else %}
+<h1>Please visit the Ratings page first and rate some movies first!</h1>
 {% endif %}
+
 
 {% endblock %}
