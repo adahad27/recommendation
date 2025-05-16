@@ -4,6 +4,7 @@ import os
 from os import path
 from flask_login import LoginManager
 import pandas as pd
+from .rec_algorithm import start_up
 
 db = SQLAlchemy()
 DB_NAME = "database.db"
@@ -24,6 +25,8 @@ def create_app():
     
     from .models import User
     create_database(app)
+    
+    start_up(db, app=app)
 
     login_manager = LoginManager()
     login_manager.login_view = "auth.login"
@@ -51,4 +54,6 @@ def create_database(app):
                 db.session.add(new_rating)
             
             db.session.commit()
+            
         print("Created Database!")
+    

@@ -3,6 +3,7 @@ from .models import User
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
 from flask_login import login_user, login_required, logout_user, current_user
+from .rec_algorithm import *
 
 auth = Blueprint('auth', __name__)
 
@@ -53,7 +54,10 @@ def signup():
             db.session.add(new_user)
             db.session.commit()
             flash('Account created successfully!', category='success')
-            login_user(user, remember=True)
+            login_user(new_user, remember=True)
+            
+            add_user()
+    
             return redirect(url_for('views.home'))
 
     return render_template("sign_up.html", user=current_user)

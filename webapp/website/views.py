@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for,
 from flask_login import login_required, current_user
 from . import db
 from .models import Rating, Movie, User
-from .rec_algorithm import return_prediction_list
+from .rec_algorithm import *
 
 views = Blueprint('views', __name__)
 @views.route("/")
@@ -20,24 +20,26 @@ def rating_page():
     if(request.method == 'POST'):
         """ Assume that the user passes in a valid movie_id """
         movie_id = int(request.form.get('movie_id'))
-        user_id = int(request.form.get('user_id'))
         rating = int(request.form.get('rating'))
-
+        
         if(rating < 1 or rating > 5):
             flash("Please rate the movie in between 1 and 5 inclusive", category="error")
-        new_rating = Rating(movie_id = movie_id, user_id = user_id, rating = rating)
+        new_rating = Rating(movie_id = movie_id, user_id = current_user.id, rating = rating)
         db.session.add(new_rating)
         db.session.commit()
+
+        alter_matrix_data_mem(user_id=current_user.id, movie_id=movie_id, rating=rating)
         return redirect(url_for("views.home"))
     return render_template("rating.html", user = current_user)
 
 @views.route("/recommendation", methods = ['GET', 'POST'])
 def recommendation_page():
+    prediction_list = []
+    generated = False
     if(request.method == 'POST'):
         """ First we validate that it is an API call to our recommendation system """
-        
-        user_id = 0 # We need to get this from the session
-        # prediction_list = rec_algorithm.return_prediction_list(userId=user_id)
-    else:
-        prediction_list = [db.session.get(Movie, 0).movie_name,db.session.get(Movie, 1).movie_name,db.session.get(Movie, 2).movie_name]
-    return render_template("recommendation.html", prediction_list=prediction_list, user = current_user)
+        prediction_list = return_prediction_list(userId=0, k = 3, elements_to_return=5)
+        generated = True
+        for index, movie in enumerate(prediction_list):
+            prediction_list[index] = db.session.get(Movie, movie).movie_name
+    return render_template("recommendation.html", prediction_list=prediction_list, user = current_user, generated = generated)

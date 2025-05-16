@@ -6,7 +6,7 @@ import heapq
 
 matrix_data_disk = None
 matrix_data_mem = None
-
+database = None
 num_users = 0
 num_medium = 0
 
@@ -18,7 +18,7 @@ userID vs mediumID format.
 If not loaded for the first time, then it will simply load the data from the
 disk.
 """
-def load_data(medium = ""):
+def load_data(app, medium = ""):
     global matrix_data_disk
     # Handle error-checking here.
     medium_list = []
@@ -32,10 +32,13 @@ def load_data(medium = ""):
     elif(not os.path.isfile(f"data/{medium}_ratings.csv")):
         print(f"{medium} training data is missing")
         return
-    matrix_data_disk = pd.read_csv(f"data/{medium}_ratings.csv")
-    
-    matrix_data_disk.loc[:, "userId"] -= 1
-    matrix_data_disk.loc[:, f"{medium}Id"] -= 1
+    with app.app_context():
+        matrix_data_disk = pd.read_sql('rating', database.engine)
+
+    matrix_data_disk = matrix_data_disk[1:]
+
+    matrix_data_disk.loc[:, "user_id"] -= 1
+    matrix_data_disk.loc[:, f"{medium}_id"] -= 1
     
 """ 
 store_data() is responsible for storing the dataframe into a .csv to be accessed
@@ -65,13 +68,13 @@ def sparsify(medium = ""):
     global num_users, num_medium, matrix_data_mem
 
     #Need to increment by 1 because data is 1-indexed
-    num_users = max(matrix_data_disk.get("userId")) + 1
-    num_medium = max(matrix_data_disk.get(f"{medium}Id")) + 1
+    num_users = max(matrix_data_disk.get("user_id")) + 1
+    num_medium = max(matrix_data_disk.get(f"{medium}_id")) + 1
     
     # We are using -1 to represent a "no-rating"
     matrix_data_mem = np.ones((num_users, num_medium)) * -1
     
-    matrix_data_mem[(matrix_data_disk.loc[:, "userId"].values)[:], (matrix_data_disk.loc[:, f"{medium}Id"].values)[:]] = (matrix_data_disk.loc[:, "rating"].values)[:]
+    matrix_data_mem[(matrix_data_disk.loc[:, "user_id"].values)[:], (matrix_data_disk.loc[:, f"{medium}_id"].values)[:]] = (matrix_data_disk.loc[:, "rating"].values)[:]
     return
 
 
@@ -101,7 +104,7 @@ def alter_matrix_data_mem(user_id, medium_id, rating):
         print("rating is invalid")
         return
 
-    matrix_data_mem[user_id][medium_id] = rating
+    matrix_data_mem[user_id + num_users][medium_id] = rating
 
     return
 
@@ -155,12 +158,10 @@ predict() is responsible for predicting the rating that a user would give a cert
 movie given what it knows about other users in the matrix_data_mem matrix.
 
 """
-def predict(userId, mediumId, k):
+def predict(userId, mediumId, k, results):
     pq = []
     #Calculate similarity between all users and the given user.
     
-    results = similarity(userId)
-
     #Filter out all users who have not consumed mediumId
     
     for user, similarity_measure in enumerate(results):
@@ -170,7 +171,6 @@ def predict(userId, mediumId, k):
     heapq.heapify(pq)
 
     collection = []
-
     for j in range(min(k, len(pq))):
         collection.append(heapq.heappop(pq))
     
@@ -184,12 +184,29 @@ def predict(userId, mediumId, k):
     return calculate_average(userId) + numerator/denominator
 
 
-def return_prediction_list(userId):
-    return
+def return_prediction_list(userId, k, elements_to_return):
+    results = similarity(userId)
+    pq = []
+    for movie in range(10):
+        if(matrix_data_mem[userId, movie] == -1):
+            prediction = predict(userId=userId, mediumId=movie, k=k, results=results)
+            
+            pq.append((prediction * -1, movie))
+    heapq.heapify(pq)
+    returnList = []
+    for i in range(elements_to_return):
+        returnList.append(pq[i][1])
+    return returnList
+
+def start_up(db, app):
+    global database
+    database = db
+    load_data(app, "movie")
+    sparsify("movie")
 
 def main():
     load_data("movie")
     sparsify("movie")
-    print(predict(0, 1, 3))
+    return_prediction_list(0)
 if __name__ == "__main__":
     main()
